@@ -1,4 +1,18 @@
 
+# Stage 1: Build stage
+FROM python:3.11-slim AS builder
+
+# Set the working directory in the build stage
+WORKDIR /app
+
+# Copy only the requirements file to optimize caching
+COPY requirements.txt .
+
+# Install dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy the rest of the application code
+COPY . .
 
 # Stage 2: Final image
 FROM python:3.11-slim
@@ -6,11 +20,17 @@ FROM python:3.11-slim
 # Set the working directory in the final image
 WORKDIR /app
 
-# Copy the Flask application files
-COPY . .
+# Copy installed dependencies from the builder stage
+COPY --from=builder /usr/local/lib/python3.11/site-packages /usr/local/lib/python3.11/site-packages
+
+# Copy the Flask application files from the builder stage
+COPY --from=builder /app .
 
 # Expose port 3000 for the application
 EXPOSE 3000
 
 # Command to run the Flask application
 CMD ["python", "app.py"]
+
+
+.
